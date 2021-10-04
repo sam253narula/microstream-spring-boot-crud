@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import com.microstream.springbootcrud.example.entity.Student;
 
 import lombok.extern.slf4j.Slf4j;
+import one.microstream.reflect.ClassLoaderProvider;
 import one.microstream.storage.embedded.types.EmbeddedStorage;
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 
@@ -28,11 +29,21 @@ public class StudentRepositoryImpl implements StudentRepository
 		
 		this.students = new ArrayList<>();
 		
-		this.storage   = EmbeddedStorage.start(
-			this.students,
-			Paths.get(location)
-		);
+//		this.storage   = EmbeddedStorage.start(
+//			this.students,
+//			Paths.get(location)
+//		);
+		// Refer for below: https://docs.microstream.one/manual/storage/customizing/custom-class-loader.html
+		this.storage =  EmbeddedStorage.Foundation(Paths.get(location))
+			.onConnectionFoundation(cf ->
+				cf.setClassLoaderProvider(ClassLoaderProvider.New(
+					Thread.currentThread().getContextClassLoader()
+				))
+			)
+			.start(this.students);
+		
 	}
+	
 	
 	@Override
 	public String storeAll(List<Student> students)
